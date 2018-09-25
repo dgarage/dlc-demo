@@ -21,3 +21,16 @@ func (mm *MatchMaker) PutTfcOffer(offer TfcOffer) error {
 	mm.offers = append(offers, &offer)
 	return nil
 }
+
+// SearchTfcOffer finds matches offers
+func (mm *MatchMaker) SearchTfcOffer(fconds FowardConditions) ([]*TfcOffer, error) {
+	var matches []*TfcOffer
+
+	for _, offer := range mm.Offers() {
+		if offer.FowardConditions == fconds {
+			matches = append(matches, offer)
+		}
+	}
+
+	return matches, nil
+}

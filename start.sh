@@ -11,17 +11,17 @@ fi
 # change the setting
 B_DIR="$HOME/bitcoin/src"
 
-BD="$B_DIR/bitcoind"
+BD=$(command -v bitcoind)
 
-if [ ! -e $BD ]; then
-    echo "file not found. $BD"
+if [[ ! $BD ]]; then
+    echo "bitcoind not found."
     exit 1
 fi
 
-BC=$B_DIR/bitcoin-cli
+BC=$(command -v bitcoin-cli)
 
-if [ ! -e $BC ]; then
-    echo "file not found. $BC"
+if [[ ! $BC ]]; then
+    echo "bitcoin-cli not found. $BC"
     exit 1
 fi
 
