@@ -17,13 +17,17 @@ type TfcOffer struct {
 // NewTfcOffer creates a TfcOffer
 func NewTfcOffer(
 	id int, cparty usr.User, fconds FowardConditions,
-) TfcOffer {
-	offer := TfcOffer{
+) *TfcOffer {
+	offer := &TfcOffer{
 		id:     111,
 		cparty: cparty,
 		fconds: fconds,
 	}
 	return offer
+}
+
+func (offer *TfcOffer) Fconds() FowardConditions {
+	return offer.fconds
 }
 
 // FowardConditions is a confition of TFC offer
