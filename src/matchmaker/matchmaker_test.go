@@ -20,7 +20,7 @@ func TestMatchMakerOffers(t *testing.T) {
 
 	settleAt := testSettleAt()
 	fconds := NewFowardConditions(100, 0.1, 0.5, settleAt)
-	offer := NewTfcOffer(1, *cparty, fconds)
+	offer := *NewTfcOffer(1, *cparty, fconds)
 
 	mm := NewMatchMaker()
 
@@ -35,7 +35,7 @@ func TestMatchMakerOffers(t *testing.T) {
 		t.Errorf("offers shouldn't be empty")
 		return
 	}
-	if offers[0] != offer {
+	if offers[0].ID() != offer.ID() {
 		t.Errorf("Invalid offers found")
 		return
 	}
@@ -51,13 +51,13 @@ func TestMatchMakerSearchOffers(t *testing.T) {
 
 	settleAt := testSettleAt()
 	fconds1 := NewFowardConditions(100, 0.1, 0.5, settleAt)
-	offer1 := NewTfcOffer(1, *cparty, fconds1)
+	offer1 := *NewTfcOffer(1, *cparty, fconds1)
 	fconds2 := NewFowardConditions(200, 0.1, 0.5, settleAt)
-	offer2 := NewTfcOffer(2, *cparty, fconds2)
+	offer2 := *NewTfcOffer(2, *cparty, fconds2)
 
 	mm := NewMatchMaker()
 
-	for _, offer := range []*TfcOffer{offer1, offer2} {
+	for _, offer := range []TfcOffer{offer1, offer2} {
 		if err = mm.PutOffer(offer); err != nil {
 			t.Errorf("unexpecter error: %v", err)
 			return
@@ -70,10 +70,53 @@ func TestMatchMakerSearchOffers(t *testing.T) {
 		t.Errorf("Invalid number of offers matched. expected: %d, actual: %d", 1, len(offers))
 		return
 	}
-	if offers[0] != offer1 {
+	if offers[0].ID() != offer1.ID() {
 		t.Errorf("Invalid offer found.")
 		return
 	}
+}
+
+func TestMatchMakerTakeOffer(t *testing.T) {
+	// Prepare test data
+	cparty, err := testCounterParty("Bob")
+	if err != nil {
+		t.Errorf("unexpecter error: %v", err)
+		return
+	}
+
+	settleAt := testSettleAt()
+	fconds := NewFowardConditions(100, 0.1, 0.5, settleAt)
+	offer := *NewTfcOffer(1, *cparty, fconds)
+
+	mm := NewMatchMaker()
+
+	if err = mm.PutOffer(offer); err != nil {
+		t.Errorf("unexpecter error: %v", err)
+		return
+	}
+
+	var takenOffer TfcOffer
+	takenOffer, err = mm.TakeOffer(offer.ID())
+
+	if err != nil {
+		t.Errorf("unexpecter error: %v", err)
+		return
+	}
+
+	dlc := takenOffer.Dlc()
+
+	if &dlc == nil {
+		t.Errorf("DLC should be prepared by matchmaker")
+		return
+	}
+
+	dlcSettleAt := dlc.GameDate()
+	if dlcSettleAt != settleAt {
+		t.Errorf("Invalid settle at. expected: %s, actual: %s",
+			settleAt, dlcSettleAt)
+	}
+
+	t.Logf("DLC made by matchmaker: %+v", dlc)
 }
 
 func testSettleAt() time.Time {
