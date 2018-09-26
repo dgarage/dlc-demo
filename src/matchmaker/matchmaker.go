@@ -17,12 +17,13 @@ func (mm *MatchMaker) Offers() []*TfcOffer {
 
 // PutOffer puts a new TFC offer on board
 func (mm *MatchMaker) PutOffer(offer *TfcOffer) error {
+	// TODO: validate offer
 	offers := mm.Offers()
 	mm.offers = append(offers, offer)
 	return nil
 }
 
-// SearchOffer finds offers that match to foward conditions
+// SearchOffers finds offers that match to foward conditions
 func (mm *MatchMaker) SearchOffers(
 	fconds FowardConditions) []*TfcOffer {
 	var matches []*TfcOffer
