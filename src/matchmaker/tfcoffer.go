@@ -41,9 +41,8 @@ type FowardConditions struct {
 
 // NewFowardConditions creates a FowardConditions
 func NewFowardConditions(
-	namount float64, rate float64, settleAt time.Time,
+	namount float64, rate float64, vols float64, settleAt time.Time,
 ) FowardConditions {
-	vols := 0.5
 	fconds := FowardConditions{
 		namount:  namount,
 		vols:     vols,

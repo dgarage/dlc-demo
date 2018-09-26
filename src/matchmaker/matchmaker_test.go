@@ -19,7 +19,7 @@ func TestMatchMakerOffers(t *testing.T) {
 	}
 
 	settleAt := testSettleAt()
-	fconds := NewFowardConditions(100, 0.1, settleAt)
+	fconds := NewFowardConditions(100, 0.1, 0.5, settleAt)
 	offer := NewTfcOffer(1, *cparty, fconds)
 
 	mm := NewMatchMaker()
@@ -50,9 +50,9 @@ func TestMatchMakerSearchOffers(t *testing.T) {
 	}
 
 	settleAt := testSettleAt()
-	fconds1 := NewFowardConditions(100, 0.1, settleAt)
+	fconds1 := NewFowardConditions(100, 0.1, 0.5, settleAt)
 	offer1 := NewTfcOffer(1, *cparty, fconds1)
-	fconds2 := NewFowardConditions(200, 0.1, settleAt)
+	fconds2 := NewFowardConditions(200, 0.1, 0.5, settleAt)
 	offer2 := NewTfcOffer(2, *cparty, fconds2)
 
 	mm := NewMatchMaker()
