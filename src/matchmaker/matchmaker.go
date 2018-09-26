@@ -6,8 +6,8 @@ type MatchMaker struct {
 }
 
 // NewMatchMaker creates a MatchMaker
-func NewMatchMaker() MatchMaker {
-	return MatchMaker{}
+func NewMatchMaker() *MatchMaker {
+	return &MatchMaker{}
 }
 
 // Offers returns TFC offers on board

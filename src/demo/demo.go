@@ -11,6 +11,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg"
 
+	"matchmaker"
 	"oracle"
 	"rpc"
 	"usr"
@@ -35,6 +36,7 @@ func main() {
 
 // Demo is dataset for demo
 type Demo struct {
+	mm     *matchmaker.MatchMaker
 	rpc    *rpc.BtcRPC
 	alice  *usr.User
 	bob    *usr.User
@@ -48,6 +50,7 @@ func initial() (*Demo, error) {
 	d := &Demo{}
 	// TODO bitcoin rpc of regtest
 	d.rpc = rpc.NewBtcRPC("http://localhost:18443", "user", "pass")
+	d.mm = matchmaker.NewMatchMaker()
 
 	// regtest requires 432 blocks to make csv active
 	res, err := d.rpc.Request("getblockcount")

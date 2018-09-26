@@ -5,14 +5,37 @@ import (
 	"fmt"
 	"time"
 
+	"matchmaker"
 	"usr"
 )
+
+func stepBobPutTfcOfferOnBoard(num int, d *Demo) error {
+	var err error
+
+	cparty := d.bob
+	fconds := matchmaker.NewFowardConditions(1, 0.1, 0.5, demoSettleAt())
+	offer := *matchmaker.NewTfcOffer(1, *cparty, fconds)
+
+	if err = d.mm.PutOffer(offer); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func stepAliceSendOfferToBob(num int, d *Demo) error {
 	s := time.Now()
 	fmt.Printf("begin step%d\n", num)
+
+	fmt.Printf("step%d : Take TFC Offer on MatchMaker board\n", num)
+	tfcoffer := d.mm.Offers()[0]
+	var err error
+	tfcoffer, err = d.mm.TakeOffer(tfcoffer.ID())
+	dlc := tfcoffer.Dlc()
+
 	fmt.Printf("step%d : Alice GetOfferData\n", num)
-	odata, err := d.alice.GetOfferData(d.sc.dlc)
+	var odata []byte
+	odata, err = d.alice.GetOfferData(&dlc)
 	if err != nil {
 		return err
 	}
@@ -143,4 +166,10 @@ func stepAliceOrBobSendRefundTx(num int, demo *Demo) error {
 	}
 	fmt.Printf("end   step%d %f sec\n", num, (time.Now()).Sub(s).Seconds())
 	return nil
+}
+
+func demoSettleAt() time.Time {
+	n := time.Now()
+	tomorrow := n.AddDate(0, 0, 1)
+	return tomorrow
 }
