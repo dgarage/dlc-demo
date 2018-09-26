@@ -1,8 +1,7 @@
 # artifacts
-bin/*
-data/*
-pkg/*
-demo/*
+/bin/*
+/data/*
+/demo/*
 
 # go libraries
 src/github.com/
