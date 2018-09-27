@@ -3,18 +3,11 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
-	"time"
-
-	"github.com/btcsuite/btcutil"
-
-	"dlc"
 )
 
 type scenario struct {
 	memo  string
-	dlc   *dlc.Dlc
 	steps []func(int, *Demo) error
 	pos   int
 }
@@ -79,12 +72,7 @@ func step(args []string, d *Demo) error {
 func scenario0(d *Demo) (*scenario, error) {
 	sc := &scenario{}
 	sc.memo = "normal"
-	date := time.Now()
-	var err error
-	sc.dlc, err = makeDlc(true, date, 1)
-	if err != nil {
-		return nil, err
-	}
+	sc.steps = append(sc.steps, stepBobPutTfcOfferOnBoard)
 	sc.steps = append(sc.steps, stepAliceSendOfferToBob)
 	sc.steps = append(sc.steps, stepBobSendAcceptToAlice)
 	sc.steps = append(sc.steps, stepAliceSendSignToBob)
@@ -94,21 +82,3 @@ func scenario0(d *Demo) (*scenario, error) {
 }
 
 //----------------------------------------------------------------
-
-func makeDlc(isA bool, date time.Time, length int) (*dlc.Dlc, error) {
-	amount := int64(1 * btcutil.SatoshiPerBitcoin)
-	fefee := int64(10)                      // fund transaction estimate fee satoshi/byte
-	sefee := int64(10)                      // settlement transaction estimate fee satoshi/byte
-	sfee := dlc.DlcSettlementTxSize * sefee // settlement transaction size is 345 bytes
-	d, err := dlc.NewDlc(half(amount), half(amount), fefee,
-		sefee, half(sfee), half(sfee), isA)
-	if err != nil {
-		return nil, err
-	}
-	d.SetGameConditions(date, length)
-	return d, nil
-}
-
-func half(value int64) int64 {
-	return int64(math.Ceil(float64(value) / float64(2)))
-}
