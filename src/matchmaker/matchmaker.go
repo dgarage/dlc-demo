@@ -1,5 +1,7 @@
 package matchmaker
 
+import "tfc"
+
 // MatchMaker matches two parties
 type MatchMaker struct {
 	offers []*TfcOffer
@@ -28,7 +30,7 @@ func (mm *MatchMaker) PutOffer(offer TfcOffer) error {
 
 // SearchOffers finds offers that match to foward conditions
 func (mm *MatchMaker) SearchOffers(
-	fconds FowardConditions) []TfcOffer {
+	fconds tfc.FowardConditions) []TfcOffer {
 	var matches []TfcOffer
 
 	for _, offer := range mm.offers {

@@ -8,6 +8,7 @@ import (
 
 	"dlc"
 	"matchmaker"
+	"tfc"
 	"usr"
 )
 
@@ -15,7 +16,7 @@ func stepBobPutTfcOfferOnBoard(num int, d *Demo) error {
 	var err error
 
 	cparty := d.bob
-	fconds := matchmaker.NewFowardConditions(1, 0.1, 0.5, demoSettleAt())
+	fconds := tfc.NewFowardConditions(1, 0.1, 0.5, demoSettleAt())
 	offer := *matchmaker.NewTfcOffer(1, *cparty, fconds)
 
 	if err = d.mm.PutOffer(offer); err != nil {

@@ -20,6 +20,7 @@ import (
 	"dlc"
 	"oracle"
 	"rpc"
+	"tfc"
 	"wallet"
 )
 
@@ -31,6 +32,8 @@ type User struct {
 	params chaincfg.Params // bitcoin network
 	dlc    *dlc.Dlc        // dlc
 	status int             // status for dlc
+	// temporal TFC storage
+	Fconds *tfc.FowardConditions // tfc conditions
 }
 
 // Status

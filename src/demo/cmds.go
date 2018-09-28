@@ -325,6 +325,10 @@ func takeTfcOffer(args []string, d *Demo) error {
 		return err
 	}
 
+	// TODO: Save TFC locally
+	fconds := tfcoffer.Fconds()
+	d.alice.Fconds = &fconds
+
 	// implicitly change the oracle status for demo
 	date := dlc.GameDate().Format("20060102")
 	fixingRate := "30"
@@ -346,7 +350,17 @@ func contractsRoot(args []string, d *Demo) error {
 
 // command: contracts list
 func listContracts(d *Demo) error {
-	fmt.Println("contracts list is called")
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "Notional Amount", "Status"})
+
+	fconds := d.alice.Fconds
+	id := "TODO: Generate dummy ID"
+	namount := strconv.FormatFloat(fconds.Namount(), 'f', -1, 64)
+	status := "Fixed"
+	trow := []string{id, namount, status}
+	table.Append(trow)
+
+	table.Render()
 	return nil
 }
 
