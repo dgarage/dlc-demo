@@ -458,8 +458,8 @@ func (u *User) SendFundTx() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s sends the Fund Transaction :%v\n", u.name, txid)
-	fmt.Printf("txout[%d]: %10d / %x\n", 0, tx.TxOut[0].Value, tx.TxOut[0].PkScript)
+	log.Printf("%s sends the Fund Transaction :%v\n", u.name, txid)
+	log.Printf("txout[%d]: %10d / %x\n", 0, tx.TxOut[0].Value, tx.TxOut[0].PkScript)
 	return nil
 }
 
@@ -522,10 +522,10 @@ func (u *User) SetOracleSigns(data []byte) error {
 		return nil
 	}
 	if rate.Amount(u.dlc.IsA()) > u.dlc.FundAmount()/2 {
-		fmt.Printf("%-5s Win  %v\n", u.name, rate)
+		log.Printf("%-5s Win  %v\n", u.name, rate)
 		return nil
 	}
-	fmt.Printf("%-5s Lose %v\n", u.name, rate)
+	log.Printf("%-5s Lose %v\n", u.name, rate)
 	return nil
 }
 
@@ -563,12 +563,12 @@ func (u *User) SendSettlementTx() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s sends the Settlement Transaction : %v\n", u.name, txid)
+	log.Printf("%s sends the Settlement Transaction : %v\n", u.name, txid)
 	for idx, txin := range tx.TxIn {
-		fmt.Printf("txin [%d]: %v\n", idx, txin.PreviousOutPoint)
+		log.Printf("txin [%d]: %v\n", idx, txin.PreviousOutPoint)
 	}
 	for idx, txout := range tx.TxOut {
-		fmt.Printf("txout[%d]: %10d / %x\n", idx, txout.Value, txout.PkScript)
+		log.Printf("txout[%d]: %10d / %x\n", idx, txout.Value, txout.PkScript)
 	}
 	return nil
 }
@@ -597,12 +597,12 @@ func (u *User) SendSettlementTxTo(efee int64) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s forwards the Settlement Transaction : %v\n", u.name, txid)
+	log.Printf("%s forwards the Settlement Transaction : %v\n", u.name, txid)
 	for idx, txin := range tx.TxIn {
-		fmt.Printf("txin [%d]: %v\n", idx, txin.PreviousOutPoint)
+		log.Printf("txin [%d]: %v\n", idx, txin.PreviousOutPoint)
 	}
 	for idx, txout := range tx.TxOut {
-		fmt.Printf("txout[%d]: %10d / %x\n", idx, txout.Value, txout.PkScript)
+		log.Printf("txout[%d]: %10d / %x\n", idx, txout.Value, txout.PkScript)
 	}
 	return nil
 }
@@ -616,9 +616,9 @@ func (u *User) SendRefundTx() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s sends the Refund Transaction : %v\n", u.name, txid)
+	log.Printf("%s sends the Refund Transaction : %v\n", u.name, txid)
 	for idx, txin := range tx.TxIn {
-		fmt.Printf("txin [%d]: %v\n", idx, txin.PreviousOutPoint)
+		log.Printf("txin [%d]: %v\n", idx, txin.PreviousOutPoint)
 	}
 	for idx, txout := range tx.TxOut {
 		fmt.Printf("txout[%d]: %10d / %x\n", idx, txout.Value, txout.PkScript)

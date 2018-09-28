@@ -61,7 +61,7 @@ func aliceSendOfferToBob(num int, d *Demo, dlc *dlc.Dlc) error {
 		return err
 	}
 	log.Printf("step%d : Alice -> Bob\n", num)
-	dump(odata)
+	// dump(odata)
 	log.Printf("step%d : Bob SetOfferData\n", num)
 	err = d.bob.SetOfferData(odata)
 	if err != nil {
@@ -89,7 +89,7 @@ func stepBobSendAcceptToAlice(num int, d *Demo) error {
 		return err
 	}
 	log.Printf("step%d : Bob -> Alice\n", num)
-	dump(adata)
+	// dump(adata)
 	log.Printf("step%d : Alice SetAcceptData\n", num)
 	err = d.alice.SetAcceptData(adata)
 	if err != nil {
@@ -108,7 +108,7 @@ func stepAliceSendSignToBob(num int, d *Demo) error {
 		return err
 	}
 	log.Printf("step%d : Alice -> Bob\n", num)
-	dump(sdata)
+	// dump(sdata)
 	log.Printf("step%d : Bob SetSignData\n", num)
 	err = d.bob.SetSignData(sdata)
 	if err != nil {
@@ -150,7 +150,7 @@ func stepAliceAndBobSetOracleSign(num int, d *Demo) error {
 
 func stepAliceOrBobSendSettlementTx(num int, demo *Demo) error {
 	s := time.Now()
-	fmt.Printf("begin step%d\n", num)
+	log.Printf("begin step%d\n", num)
 	users := []*usr.User{demo.alice, demo.bob}
 	for _, user := range users {
 		err := user.SendSettlementTx()
@@ -164,19 +164,19 @@ func stepAliceOrBobSendSettlementTx(num int, demo *Demo) error {
 		}
 		break
 	}
-	fmt.Printf("end   step%d %f sec\n", num, (time.Now()).Sub(s).Seconds())
+	log.Printf("end   step%d %f sec\n", num, (time.Now()).Sub(s).Seconds())
 	return nil
 }
 
 func stepAliceOrBobSendRefundTx(num int, demo *Demo) error {
 	s := time.Now()
-	fmt.Printf("begin step%d\n", num)
+	log.Printf("begin step%d\n", num)
 	user := demo.alice
 	err := user.SendRefundTx()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("end   step%d %f sec\n", num, (time.Now()).Sub(s).Seconds())
+	log.Printf("end   step%d %f sec\n", num, (time.Now()).Sub(s).Seconds())
 	return nil
 }
 

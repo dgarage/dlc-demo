@@ -353,6 +353,7 @@ func listContracts(d *Demo) error {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"ID", "Notional Amount", "Status"})
 
+	fmt.Println("TODO: Add more fields and dummy records")
 	fconds := d.alice.Fconds
 	id := "TODO: Generate dummy ID"
 	namount := strconv.FormatFloat(fconds.Namount(), 'f', -1, 64)
@@ -375,6 +376,14 @@ func contractRoot(args []string, d *Demo) error {
 
 // command: contract settle
 func settleContract(args []string, d *Demo) error {
-	fmt.Println("contract settle is called")
+	fmt.Println("TODO: add more logs")
+
+	var err error
+	if err = stepAliceAndBobSetOracleSign(4, d); err != nil {
+		return err
+	}
+	if err = stepAliceOrBobSendSettlementTx(5, d); err != nil {
+		return err
+	}
 	return nil
 }
