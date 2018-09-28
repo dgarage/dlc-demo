@@ -48,7 +48,8 @@ func (offer *TfcOffer) Dlc() dlc.Dlc {
 func (offer *TfcOffer) makeDlc(isA bool, length int) (*dlc.Dlc, error) {
 	settleAt := offer.fconds.SettleAt()
 	namountBtc := offer.fconds.Namount()
-	namountSat := int64(namountBtc * btcutil.SatoshiPerBitcoin)
+	fundRate := offer.fconds.FundRate()
+	namountSat := int64(namountBtc * btcutil.SatoshiPerBitcoin * fundRate)
 	// TODO: need to calculate fees?
 	fefee := int64(10)                      // fund transaction estimate fee satoshi/byte
 	sefee := int64(10)                      // settlement transaction estimate fee satoshi/byte

@@ -4,23 +4,23 @@ import "time"
 
 // FowardConditions is a confition of TFC offer
 type FowardConditions struct {
-	namount  float64   // Notional Amount
-	vols     float64   // Allowable Volatilities
-	famount  float64   // Fund Amount
-	rate     float64   // Foward rate
-	settleAt time.Time // Settlement Datetime
+	namount    float64   // Notional Amount
+	fundRate   float64   // Fund Rate
+	famount    float64   // Fund Amount
+	fowardRate float64   // Foward rate
+	settleAt   time.Time // Settlement Datetime
 }
 
 // NewFowardConditions creates a FowardConditions
 func NewFowardConditions(
-	namount float64, rate float64, vols float64, settleAt time.Time,
+	namount float64, fundRate float64, fowardRate float64, settleAt time.Time,
 ) FowardConditions {
 	fconds := FowardConditions{
-		namount:  namount,
-		vols:     vols,
-		famount:  namount * namount,
-		rate:     rate,
-		settleAt: settleAt,
+		namount:    namount,
+		fundRate:   fundRate,
+		famount:    namount * fundRate,
+		fowardRate: fowardRate,
+		settleAt:   settleAt,
 	}
 
 	return fconds
@@ -31,10 +31,20 @@ func (fconds FowardConditions) Namount() float64 {
 	return fconds.namount
 }
 
-// Rate returns forward rate
-func (fconds FowardConditions) Rate() float64 {
-	return fconds.rate
+// FowardRate returns forward rate
+func (fconds FowardConditions) FowardRate() float64 {
+	return fconds.fowardRate
 }
+
+// FundRate returns fund rate
+func (fconds FowardConditions) FundRate() float64 {
+	return fconds.fundRate
+}
+
+// Vols returns allowable volatilities
+// func (fconds FowardConditions) Vols() float64 {
+// 	return fconds.vols
+// }
 
 // SettleAt returns settlement datetime
 func (fconds FowardConditions) SettleAt() time.Time {

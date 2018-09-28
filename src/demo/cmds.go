@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/olekukonko/tablewriter"
+	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/decor"
 
 	"matchmaker"
 	"usr"
@@ -43,7 +46,6 @@ func listCmds() []*cmd {
 	list = append(list, &cmd{[]string{"contract"}, contractRoot})
 	return list
 }
-
 func generate(args []string, d *Demo) error {
 	var err error
 	nblocks := 1
@@ -297,7 +299,7 @@ func listTfcOffers(d *Demo) error {
 		id := strconv.Itoa(o.ID())
 		fconds := o.Fconds()
 		namount := fmt.Sprintf("%.8f BTC", fconds.Namount())
-		frate := fmt.Sprintf("%.8f JPY/BTC", fconds.Rate())
+		frate := fmt.Sprintf("%.8f JPY/BTC", fconds.FowardRate())
 		// tFormat := "2006-01-02 15:04:05"
 		tFormat := "2006-01-02"
 		settleAt := fconds.SettleAt().Format(tFormat)
@@ -327,26 +329,24 @@ func takeTfcOffer(args []string, d *Demo) error {
 	}
 
 	var tfcoffer matchmaker.TfcOffer
+	progressbar("[Take Offer]", 10)
 	tfcoffer, err = d.mm.TakeOffer(offerID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Sending DLC to counterparty")
-	fmt.Println("TODO: add more logs")
+	progressbar("[Send Contract]", 2)
 	dlc := tfcoffer.Dlc()
 	if err = aliceSendOfferToBob(1, d, &dlc); err != nil {
 		return err
 	}
 
-	fmt.Println("Waiting for counterpaty to accept")
-	fmt.Println("TODO: add more logs")
+	progressbar("[Wait Appceptance]", 5)
 	if err = stepBobSendAcceptToAlice(2, d); err != nil {
 		return err
 	}
 
-	fmt.Println("Sending sign to counterparty")
-	fmt.Println("TODO: add more logs")
+	progressbar("[Send Sign]", 2)
 	if err = stepAliceSendSignToBob(3, d); err != nil {
 		return err
 	}
@@ -354,6 +354,8 @@ func takeTfcOffer(args []string, d *Demo) error {
 	// TODO: Save TFC locally
 	fconds := tfcoffer.Fconds()
 	d.alice.Fconds = &fconds
+
+	fmt.Println("Contract has been made successfully.")
 
 	// implicitly change the oracle status for demo
 	date := dlc.GameDate().Format("20060102")
@@ -377,14 +379,25 @@ func contractsRoot(args []string, d *Demo) error {
 // command: contracts list
 func listContracts(d *Demo) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Notional Amount", "Status"})
+	table.SetHeader([]string{"ID", "Notional Amount", "Foward Rate", "Status"})
 
-	fmt.Println("TODO: Add more fields and dummy records")
+	var namount, frate, status string
+	var trow []string
+
+	// Dummy record
 	fconds := d.alice.Fconds
-	id := "TODO: Generate dummy ID"
-	namount := strconv.FormatFloat(fconds.Namount(), 'f', -1, 64)
-	status := "Fixed"
-	trow := []string{id, namount, status}
+	id := "1"
+	namount = fmt.Sprintf("%.8f BTC", 0.5)
+	frate = fmt.Sprintf("%.8f JPY/BTC", 0.1234)
+	status = "Completed"
+	trow = []string{id, namount, frate, status}
+	table.Append(trow)
+
+	id = "2"
+	namount = fmt.Sprintf("%.8f BTC", fconds.Namount())
+	frate = fmt.Sprintf("%.8f JPY/BTC", fconds.FowardRate())
+	status = "Fixed"
+	trow = []string{id, namount, frate, status}
 	table.Append(trow)
 
 	table.Render()
@@ -402,7 +415,7 @@ func contractRoot(args []string, d *Demo) error {
 
 // command: contract settle
 func settleContract(args []string, d *Demo) error {
-	fmt.Println("TODO: add more logs")
+	progressbar("[Settle Contract]", 10)
 
 	var err error
 	if err = stepAliceAndBobSetOracleSign(4, d); err != nil {
@@ -411,5 +424,37 @@ func settleContract(args []string, d *Demo) error {
 	if err = stepAliceOrBobSendSettlementTx(5, d); err != nil {
 		return err
 	}
+
+	fmt.Println("Settlement Tx has been sent successfully.")
+
 	return nil
+}
+
+func progressbar(name string, duration time.Duration) {
+	p := mpb.New()
+
+	total := 100
+	// adding a single bar
+	bar := p.AddBar(int64(total),
+		mpb.PrependDecorators(
+			// display our name with one space on the right
+			decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
+			// replace ETA decorator with "done" message, OnComplete event
+			decor.OnComplete(
+				// ETA decorator with ewma age of 60, and width reservation of 4
+				decor.EwmaETA(decor.ET_STYLE_GO, 60, decor.WC{W: 4}), "Done",
+			),
+		),
+		mpb.AppendDecorators(decor.Percentage()),
+	)
+	// simulating some work
+	max := duration * time.Millisecond
+	for i := 0; i < total; i++ {
+		start := time.Now()
+		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
+		// ewma based decorators require work duration measurement
+		bar.IncrBy(1, time.Since(start))
+	}
+	// wait for our bar to complete and flush
+	p.Wait()
 }

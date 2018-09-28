@@ -16,16 +16,20 @@ func stepBobPutTfcOfferOnBoard(num int, d *Demo) error {
 	var err error
 	var date time.Time
 	date, err = time.Parse("2006-01-02", "2018-10-31")
+	if err != nil {
+		return err
+	}
+
 	cparty := d.bob
+	fundRate := 0.5
 	// TODO: adjust values
-	vol := 0.5
-	frate := 0.1
+	forwardRate := 0.98765
 
 	amts := []float64{1, 2}
 
 	for i, amt := range amts {
 		ID := i + 1
-		fconds := tfc.NewFowardConditions(amt, frate, vol, date)
+		fconds := tfc.NewFowardConditions(amt, fundRate, forwardRate, date)
 		offer := *matchmaker.NewTfcOffer(ID, *cparty, fconds)
 
 		if err = d.mm.PutOffer(offer); err != nil {
