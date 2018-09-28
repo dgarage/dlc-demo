@@ -6,12 +6,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/olekukonko/tablewriter"
 
+	"matchmaker"
 	"usr"
 )
 
@@ -31,6 +35,11 @@ func listCmds() []*cmd {
 	list = append(list, &cmd{[]string{"fee"}, txfee})
 	list = append(list, &cmd{[]string{"faucet"}, faucet})
 	list = append(list, &cmd{[]string{"setval"}, setval})
+	// commands for tfc demo
+	list = append(list, &cmd{[]string{"offers"}, offersRoot})
+	list = append(list, &cmd{[]string{"offer"}, offerRoot})
+	list = append(list, &cmd{[]string{"contracts"}, contractsRoot})
+	list = append(list, &cmd{[]string{"contract"}, contractRoot})
 	return list
 }
 
@@ -116,7 +125,7 @@ func faucet(args []string, d *Demo) error {
 		return fmt.Errorf("satoshi is less than or equal to zero. %d", satoshi)
 	}
 	s := time.Now()
-	fmt.Printf("begin faucet\n")
+	log.Printf("begin faucet\n")
 	_, err = d.rpc.Request("generate", 1)
 	if err != nil {
 		return err
@@ -136,8 +145,8 @@ func faucet(args []string, d *Demo) error {
 			}
 		}
 	}
-	balance(nil, d)
-	fmt.Printf("end   faucet %f sec\n", (time.Now()).Sub(s).Seconds())
+	// balance(nil, d)
+	log.Printf("end   faucet %f sec\n", (time.Now()).Sub(s).Seconds())
 	return nil
 }
 
@@ -240,5 +249,118 @@ func setval(args []string, d *Demo) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// commands for TFC demo
+
+func offersRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "list":
+		err = listTfcOffers(d)
+	}
+	return err
+}
+
+// command: offers list
+func listTfcOffers(d *Demo) error {
+	err := stepBobPutTfcOfferOnBoard(0, d)
+	if err != nil {
+		return err
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "Notional Amount"})
+	for _, o := range d.mm.Offers() {
+		id := strconv.Itoa(o.ID())
+		namount := strconv.FormatFloat(o.Fconds().Namount(), 'f', -1, 64)
+		trow := []string{id, namount}
+		table.Append(trow)
+	}
+	table.Render()
+	return nil
+}
+
+func offerRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "take":
+		err = takeTfcOffer(args[2:], d)
+	}
+	return err
+}
+
+// command: offer take 111
+func takeTfcOffer(args []string, d *Demo) error {
+	var err error
+	var offerID int
+	offerID, err = strconv.Atoi(args[0])
+	if err != nil {
+		return err
+	}
+
+	var tfcoffer matchmaker.TfcOffer
+	tfcoffer, err = d.mm.TakeOffer(offerID)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Sending DLC to counterparty")
+	fmt.Println("TODO: add more logs")
+	dlc := tfcoffer.Dlc()
+	if err = aliceSendOfferToBob(1, d, &dlc); err != nil {
+		return err
+	}
+
+	fmt.Println("Waiting for counterpaty to accept")
+	fmt.Println("TODO: add more logs")
+	if err = stepBobSendAcceptToAlice(2, d); err != nil {
+		return err
+	}
+
+	fmt.Println("Sending sign to counterparty")
+	fmt.Println("TODO: add more logs")
+	if err = stepAliceSendSignToBob(3, d); err != nil {
+		return err
+	}
+
+	// implicitly change the oracle status for demo
+	date := dlc.GameDate().Format("20060102")
+	fixingRate := "30"
+	if err = d.olivia.SetVals(date, fixingRate); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func contractsRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "list":
+		err = listContracts(d)
+	}
+	return err
+}
+
+// command: contracts list
+func listContracts(d *Demo) error {
+	fmt.Println("contracts list is called")
+	return nil
+}
+
+func contractRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "settle":
+		err = settleContract(args[2:], d)
+	}
+	return err
+}
+
+// command: contract settle
+func settleContract(args []string, d *Demo) error {
+	fmt.Println("contract settle is called")
 	return nil
 }

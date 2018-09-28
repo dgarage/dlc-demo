@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 )
 
@@ -17,9 +18,9 @@ func (s *scenario) step(d *Demo) error {
 		fmt.Printf("This scenario is over.\n")
 		return nil
 	}
-	if s.pos == 0 {
-		fmt.Printf("This scenario start.\n")
-	}
+	// if s.pos == 0 {
+	// 	fmt.Printf("This scenario start.\n")
+	// }
 	err := s.steps[s.pos](s.pos+1, d)
 	if err != nil {
 		return err
@@ -55,8 +56,8 @@ func set(args []string, d *Demo) error {
 	}
 	d.alice.ClearDlc()
 	d.bob.ClearDlc()
-	fmt.Printf("set the scenario.\n")
-	fmt.Printf("%s\n", d.sc.memo)
+	log.Printf("set the scenario.\n")
+	log.Printf("%s\n", d.sc.memo)
 	return nil
 }
 

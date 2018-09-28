@@ -36,7 +36,7 @@ func (offer *TfcOffer) ID() int {
 }
 
 // Fconds returns foward conditions of the offer
-func (offer *TfcOffer) Fconds() FowardConditions {
+func (offer TfcOffer) Fconds() FowardConditions {
 	return offer.fconds
 }
 
@@ -88,4 +88,8 @@ func NewFowardConditions(
 	}
 
 	return fconds
+}
+
+func (fconds FowardConditions) Namount() float64 {
+	return fconds.namount
 }
