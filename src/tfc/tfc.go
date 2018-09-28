@@ -31,6 +31,11 @@ func (fconds FowardConditions) Namount() float64 {
 	return fconds.namount
 }
 
+// Rate returns forward rate
+func (fconds FowardConditions) Rate() float64 {
+	return fconds.rate
+}
+
 // SettleAt returns settlement datetime
 func (fconds FowardConditions) SettleAt() time.Time {
 	return fconds.settleAt

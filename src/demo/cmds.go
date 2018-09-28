@@ -36,6 +36,7 @@ func listCmds() []*cmd {
 	list = append(list, &cmd{[]string{"faucet"}, faucet})
 	list = append(list, &cmd{[]string{"setval"}, setval})
 	// commands for tfc demo
+	list = append(list, &cmd{[]string{"wallet"}, walletRoot})
 	list = append(list, &cmd{[]string{"offers"}, offersRoot})
 	list = append(list, &cmd{[]string{"offer"}, offerRoot})
 	list = append(list, &cmd{[]string{"contracts"}, contractsRoot})
@@ -252,6 +253,23 @@ func setval(args []string, d *Demo) error {
 	return nil
 }
 
+func walletRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "balance":
+		err = showBalance(d)
+	}
+	return err
+}
+
+func showBalance(d *Demo) error {
+	bSat := d.alice.GetBalance()
+	bBtc := float64(bSat) / btcutil.SatoshiPerBitcoin
+
+	fmt.Printf("Amount: %.8f BTC\n", bBtc)
+	return nil
+}
+
 // commands for TFC demo
 
 func offersRoot(args []string, d *Demo) error {
@@ -265,17 +283,25 @@ func offersRoot(args []string, d *Demo) error {
 
 // command: offers list
 func listTfcOffers(d *Demo) error {
-	err := stepBobPutTfcOfferOnBoard(0, d)
-	if err != nil {
-		return err
+	// Add dummy data
+	if len(d.mm.Offers()) < 1 {
+		err := stepBobPutTfcOfferOnBoard(0, d)
+		if err != nil {
+			return err
+		}
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Notional Amount"})
+	table.SetHeader([]string{"ID", "Notional Amount", "Forward Rate", "Settle Date"})
 	for _, o := range d.mm.Offers() {
 		id := strconv.Itoa(o.ID())
-		namount := strconv.FormatFloat(o.Fconds().Namount(), 'f', -1, 64)
-		trow := []string{id, namount}
+		fconds := o.Fconds()
+		namount := fmt.Sprintf("%.8f BTC", fconds.Namount())
+		frate := fmt.Sprintf("%.8f JPY/BTC", fconds.Rate())
+		// tFormat := "2006-01-02 15:04:05"
+		tFormat := "2006-01-02"
+		settleAt := fconds.SettleAt().Format(tFormat)
+		trow := []string{id, namount, frate, settleAt}
 		table.Append(trow)
 	}
 	table.Render()

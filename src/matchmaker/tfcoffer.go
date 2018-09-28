@@ -23,7 +23,7 @@ func NewTfcOffer(
 	id int, cparty usr.User, fconds tfc.FowardConditions,
 ) *TfcOffer {
 	offer := &TfcOffer{
-		id:     111,
+		id:     id,
 		cparty: cparty,
 		fconds: fconds,
 	}

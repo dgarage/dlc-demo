@@ -14,13 +14,23 @@ import (
 
 func stepBobPutTfcOfferOnBoard(num int, d *Demo) error {
 	var err error
-
+	var date time.Time
+	date, err = time.Parse("2006-01-02", "2018-10-31")
 	cparty := d.bob
-	fconds := tfc.NewFowardConditions(1, 0.1, 0.5, demoSettleAt())
-	offer := *matchmaker.NewTfcOffer(1, *cparty, fconds)
+	// TODO: adjust values
+	vol := 0.5
+	frate := 0.1
 
-	if err = d.mm.PutOffer(offer); err != nil {
-		return err
+	amts := []float64{1, 2}
+
+	for i, amt := range amts {
+		ID := i + 1
+		fconds := tfc.NewFowardConditions(amt, frate, vol, date)
+		offer := *matchmaker.NewTfcOffer(ID, *cparty, fconds)
+
+		if err = d.mm.PutOffer(offer); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -178,10 +188,4 @@ func stepAliceOrBobSendRefundTx(num int, demo *Demo) error {
 	}
 	log.Printf("end   step%d %f sec\n", num, (time.Now()).Sub(s).Seconds())
 	return nil
-}
-
-func demoSettleAt() time.Time {
-	n := time.Now()
-	tomorrow := n.AddDate(0, 0, 1)
-	return tomorrow
 }
