@@ -44,6 +44,7 @@ func listCmds() []*cmd {
 	list = append(list, &cmd{[]string{"offer"}, offerRoot})
 	list = append(list, &cmd{[]string{"contracts"}, contractsRoot})
 	list = append(list, &cmd{[]string{"contract"}, contractRoot})
+	list = append(list, &cmd{[]string{"debug"}, debugRoot})
 	return list
 }
 func generate(args []string, d *Demo) error {
@@ -62,7 +63,7 @@ func generate(args []string, d *Demo) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("generate %d\n", nblocks)
+	fmt.Printf("block generated\n")
 	bs, err := json.Marshal(res.Result)
 	if err != nil {
 		return err
@@ -357,13 +358,6 @@ func takeTfcOffer(args []string, d *Demo) error {
 
 	fmt.Println("Contract has been made successfully.")
 
-	// implicitly change the oracle status for demo
-	date := dlc.GameDate().Format("20060102")
-	fixingRate := "30"
-	if err = d.olivia.SetVals(date, fixingRate); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -396,7 +390,12 @@ func listContracts(d *Demo) error {
 	id = "2"
 	namount = fmt.Sprintf("%.8f BTC", fconds.Namount())
 	frate = fmt.Sprintf("%.8f JPY/BTC", fconds.FowardRate())
-	status = "Fixed"
+	_, err := d.olivia.Signs(fconds.SettleAt())
+	if err == nil {
+		status = "Fixed"
+	} else {
+		status = "In Progress"
+	}
 	trow = []string{id, namount, frate, status}
 	table.Append(trow)
 
@@ -428,6 +427,19 @@ func settleContract(args []string, d *Demo) error {
 	fmt.Println("Settlement Tx has been sent successfully.")
 
 	return nil
+}
+
+func debugRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "genBlock":
+		err = generate([]string{}, d)
+	case "fixRate":
+		fmt.Println("Oracle has fixed rate")
+		err = d.olivia.SetVals(args[2], args[3])
+	}
+
+	return err
 }
 
 func progressbar(name string, duration time.Duration) {
