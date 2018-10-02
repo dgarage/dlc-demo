@@ -6,12 +6,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math/rand"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/olekukonko/tablewriter"
+	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/decor"
 
+	"matchmaker"
 	"usr"
 )
 
@@ -31,9 +38,15 @@ func listCmds() []*cmd {
 	list = append(list, &cmd{[]string{"fee"}, txfee})
 	list = append(list, &cmd{[]string{"faucet"}, faucet})
 	list = append(list, &cmd{[]string{"setval"}, setval})
+	// commands for tfc demo
+	list = append(list, &cmd{[]string{"wallet"}, walletRoot})
+	list = append(list, &cmd{[]string{"offers"}, offersRoot})
+	list = append(list, &cmd{[]string{"offer"}, offerRoot})
+	list = append(list, &cmd{[]string{"contracts"}, contractsRoot})
+	list = append(list, &cmd{[]string{"contract"}, contractRoot})
+	list = append(list, &cmd{[]string{"debug"}, debugRoot})
 	return list
 }
-
 func generate(args []string, d *Demo) error {
 	var err error
 	nblocks := 1
@@ -50,7 +63,7 @@ func generate(args []string, d *Demo) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("generate %d\n", nblocks)
+	fmt.Printf("block generated\n")
 	bs, err := json.Marshal(res.Result)
 	if err != nil {
 		return err
@@ -116,7 +129,7 @@ func faucet(args []string, d *Demo) error {
 		return fmt.Errorf("satoshi is less than or equal to zero. %d", satoshi)
 	}
 	s := time.Now()
-	fmt.Printf("begin faucet\n")
+	log.Printf("begin faucet\n")
 	_, err = d.rpc.Request("generate", 1)
 	if err != nil {
 		return err
@@ -136,8 +149,8 @@ func faucet(args []string, d *Demo) error {
 			}
 		}
 	}
-	balance(nil, d)
-	fmt.Printf("end   faucet %f sec\n", (time.Now()).Sub(s).Seconds())
+	// balance(nil, d)
+	log.Printf("end   faucet %f sec\n", (time.Now()).Sub(s).Seconds())
 	return nil
 }
 
@@ -241,4 +254,219 @@ func setval(args []string, d *Demo) error {
 		return err
 	}
 	return nil
+}
+
+func walletRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "balance":
+		err = showBalance(d)
+	}
+	return err
+}
+
+func showBalance(d *Demo) error {
+	bSat := d.alice.GetBalance()
+	bBtc := float64(bSat) / btcutil.SatoshiPerBitcoin
+
+	fmt.Printf("Amount: %.8f BTC\n", bBtc)
+	return nil
+}
+
+// commands for TFC demo
+
+func offersRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "list":
+		err = listTfcOffers(d)
+	}
+	return err
+}
+
+// command: offers list
+func listTfcOffers(d *Demo) error {
+	// Add dummy data
+	if len(d.mm.Offers()) < 1 {
+		err := stepBobPutTfcOfferOnBoard(0, d)
+		if err != nil {
+			return err
+		}
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "Notional Amount", "Forward Rate", "Settle Date"})
+	for _, o := range d.mm.Offers() {
+		id := strconv.Itoa(o.ID())
+		fconds := o.Fconds()
+		namount := fmt.Sprintf("%.8f BTC", fconds.Namount())
+		frate := fmt.Sprintf("%.8f JPY/BTC", fconds.FowardRate())
+		// tFormat := "2006-01-02 15:04:05"
+		tFormat := "2006-01-02"
+		settleAt := fconds.SettleAt().Format(tFormat)
+		trow := []string{id, namount, frate, settleAt}
+		table.Append(trow)
+	}
+	table.Render()
+	return nil
+}
+
+func offerRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "take":
+		err = takeTfcOffer(args[2:], d)
+	}
+	return err
+}
+
+// command: offer take 111
+func takeTfcOffer(args []string, d *Demo) error {
+	var err error
+	var offerID int
+	offerID, err = strconv.Atoi(args[0])
+	if err != nil {
+		return err
+	}
+
+	var tfcoffer matchmaker.TfcOffer
+	progressbar("[Take Offer]", 10)
+	tfcoffer, err = d.mm.TakeOffer(offerID)
+	if err != nil {
+		return err
+	}
+
+	progressbar("[Send Contract]", 2)
+	dlc := tfcoffer.Dlc()
+	if err = aliceSendOfferToBob(1, d, &dlc); err != nil {
+		return err
+	}
+
+	progressbar("[Wait Appceptance]", 5)
+	if err = stepBobSendAcceptToAlice(2, d); err != nil {
+		return err
+	}
+
+	progressbar("[Send Sign]", 2)
+	if err = stepAliceSendSignToBob(3, d); err != nil {
+		return err
+	}
+
+	// TODO: Save TFC locally
+	fconds := tfcoffer.Fconds()
+	d.alice.Fconds = &fconds
+
+	fmt.Println("Contract has been made successfully.")
+
+	return nil
+}
+
+func contractsRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "list":
+		err = listContracts(d)
+	}
+	return err
+}
+
+// command: contracts list
+func listContracts(d *Demo) error {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "Notional Amount", "Foward Rate", "Status"})
+
+	var namount, frate, status string
+	var trow []string
+
+	// Dummy record
+	fconds := d.alice.Fconds
+	id := "1"
+	namount = fmt.Sprintf("%.8f BTC", 0.5)
+	frate = fmt.Sprintf("%.8f JPY/BTC", 0.1234)
+	status = "Completed"
+	trow = []string{id, namount, frate, status}
+	table.Append(trow)
+
+	id = "2"
+	namount = fmt.Sprintf("%.8f BTC", fconds.Namount())
+	frate = fmt.Sprintf("%.8f JPY/BTC", fconds.FowardRate())
+	_, err := d.olivia.Signs(fconds.SettleAt())
+	if err == nil {
+		status = "Fixed"
+	} else {
+		status = "In Progress"
+	}
+	trow = []string{id, namount, frate, status}
+	table.Append(trow)
+
+	table.Render()
+	return nil
+}
+
+func contractRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "settle":
+		err = settleContract(args[2:], d)
+	}
+	return err
+}
+
+// command: contract settle
+func settleContract(args []string, d *Demo) error {
+	progressbar("[Settle Contract]", 10)
+
+	var err error
+	if err = stepAliceAndBobSetOracleSign(4, d); err != nil {
+		return err
+	}
+	if err = stepAliceOrBobSendSettlementTx(5, d); err != nil {
+		return err
+	}
+
+	fmt.Println("Settlement Tx has been sent successfully.")
+
+	return nil
+}
+
+func debugRoot(args []string, d *Demo) error {
+	var err error
+	switch subcmd := args[1]; subcmd {
+	case "genBlock":
+		err = generate([]string{}, d)
+	case "fixRate":
+		fmt.Println("Oracle has fixed rate")
+		err = d.olivia.SetVals(args[2], args[3])
+	}
+
+	return err
+}
+
+func progressbar(name string, duration time.Duration) {
+	p := mpb.New()
+
+	total := 100
+	// adding a single bar
+	bar := p.AddBar(int64(total),
+		mpb.PrependDecorators(
+			// display our name with one space on the right
+			decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
+			// replace ETA decorator with "done" message, OnComplete event
+			decor.OnComplete(
+				// ETA decorator with ewma age of 60, and width reservation of 4
+				decor.EwmaETA(decor.ET_STYLE_GO, 60, decor.WC{W: 4}), "Done",
+			),
+		),
+		mpb.AppendDecorators(decor.Percentage()),
+	)
+	// simulating some work
+	max := duration * time.Millisecond
+	for i := 0; i < total; i++ {
+		start := time.Now()
+		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
+		// ewma based decorators require work duration measurement
+		bar.IncrBy(1, time.Since(start))
+	}
+	// wait for our bar to complete and flush
+	p.Wait()
 }

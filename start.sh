@@ -80,6 +80,7 @@ _EOF_
 
 chmod 755 $STOP_SH
 
+clear
 demo/demo
 
 exit 0

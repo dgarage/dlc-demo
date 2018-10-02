@@ -2,11 +2,11 @@ package matchmaker
 
 import (
 	"math"
-	"time"
 
 	"github.com/btcsuite/btcutil"
 
 	"dlc"
+	"tfc"
 	"usr"
 )
 
@@ -14,16 +14,16 @@ import (
 type TfcOffer struct {
 	id     int
 	cparty usr.User // Counterparty
-	fconds FowardConditions
+	fconds tfc.FowardConditions
 	dlc    *dlc.Dlc
 }
 
 // NewTfcOffer creates a TfcOffer
 func NewTfcOffer(
-	id int, cparty usr.User, fconds FowardConditions,
+	id int, cparty usr.User, fconds tfc.FowardConditions,
 ) *TfcOffer {
 	offer := &TfcOffer{
-		id:     111,
+		id:     id,
 		cparty: cparty,
 		fconds: fconds,
 	}
@@ -36,7 +36,7 @@ func (offer *TfcOffer) ID() int {
 }
 
 // Fconds returns foward conditions of the offer
-func (offer *TfcOffer) Fconds() FowardConditions {
+func (offer TfcOffer) Fconds() tfc.FowardConditions {
 	return offer.fconds
 }
 
@@ -46,9 +46,10 @@ func (offer *TfcOffer) Dlc() dlc.Dlc {
 }
 
 func (offer *TfcOffer) makeDlc(isA bool, length int) (*dlc.Dlc, error) {
-	settleAt := offer.fconds.settleAt
-	namountBtc := offer.fconds.namount
-	namountSat := int64(namountBtc * btcutil.SatoshiPerBitcoin)
+	settleAt := offer.fconds.SettleAt()
+	namountBtc := offer.fconds.Namount()
+	fundRate := offer.fconds.FundRate()
+	namountSat := int64(namountBtc * btcutil.SatoshiPerBitcoin * fundRate)
 	// TODO: need to calculate fees?
 	fefee := int64(10)                      // fund transaction estimate fee satoshi/byte
 	sefee := int64(10)                      // settlement transaction estimate fee satoshi/byte
@@ -64,28 +65,4 @@ func (offer *TfcOffer) makeDlc(isA bool, length int) (*dlc.Dlc, error) {
 
 func half(value int64) int64 {
 	return int64(math.Ceil(float64(value) / float64(2)))
-}
-
-// FowardConditions is a confition of TFC offer
-type FowardConditions struct {
-	namount  float64   // Notional Amount
-	vols     float64   // Allowable Volatilities
-	famount  float64   // Fund Amount
-	rate     float64   // Foward rate
-	settleAt time.Time // Settlement Datetime
-}
-
-// NewFowardConditions creates a FowardConditions
-func NewFowardConditions(
-	namount float64, rate float64, vols float64, settleAt time.Time,
-) FowardConditions {
-	fconds := FowardConditions{
-		namount:  namount,
-		vols:     vols,
-		famount:  namount * namount,
-		rate:     rate,
-		settleAt: settleAt,
-	}
-
-	return fconds
 }

@@ -18,17 +18,23 @@ import (
 )
 
 func main() {
-	log.SetOutput(os.Stdout)
+	logfile, err := os.OpenFile("./demo.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		panic("cannot open demo.log:" + err.Error())
+	}
+	defer logfile.Close()
+	log.SetOutput(logfile)
+	// log.SetOutput(os.Stdout)
 	log.SetFlags(log.LstdFlags + log.Lshortfile)
 	// init
 	demo, err := initial()
 	if err != nil {
-		fmt.Printf("initial error : %+v\n", err)
+		log.Fatalf("initial error : %+v\n", err)
 		return
 	}
 	err = set([]string{"set", "0"}, demo)
 	if err != nil {
-		fmt.Printf("set error : %+v\n", err)
+		log.Fatalf("set error : %+v\n", err)
 		return
 	}
 	console(demo)
@@ -46,7 +52,7 @@ type Demo struct {
 
 func initial() (*Demo, error) {
 	s := time.Now()
-	fmt.Printf("begin initial\n")
+	log.Printf("begin initial\n")
 	d := &Demo{}
 	// TODO bitcoin rpc of regtest
 	d.rpc = rpc.NewBtcRPC("http://localhost:18443", "user", "pass")
@@ -58,7 +64,7 @@ func initial() (*Demo, error) {
 		return nil, err
 	}
 	height, _ := res.Result.(float64)
-	fmt.Printf("block count  : %.0f\n", height)
+	log.Printf("block count  : %.0f\n", height)
 	if height < 432 {
 		_, err = d.rpc.Request("generate", 432-height)
 		if err != nil {
@@ -72,7 +78,7 @@ func initial() (*Demo, error) {
 		return nil, err
 	}
 	total, _ := res.Result.(float64)
-	fmt.Printf("total amount : %.8f BTC\n", total)
+	log.Printf("total amount : %.8f BTC\n", total)
 
 	params := chaincfg.RegressionNetParams
 	// Olivia (Oracle)
@@ -90,7 +96,7 @@ func initial() (*Demo, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("end   initial %f sec\n", (time.Now()).Sub(s).Seconds())
+	log.Printf("end   initial %f sec\n", (time.Now()).Sub(s).Seconds())
 	return d, nil
 }
 
