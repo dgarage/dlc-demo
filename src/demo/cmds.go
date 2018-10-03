@@ -295,16 +295,17 @@ func listTfcOffers(d *Demo) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Notional Amount", "Forward Rate", "Settle Date"})
+	table.SetHeader([]string{"ID", "Notional Amount", "Fund Rate", "Forward Rate", "Settle Date"})
 	for _, o := range d.mm.Offers() {
 		id := strconv.Itoa(o.ID())
 		fconds := o.Fconds()
 		namount := fmt.Sprintf("%.8f BTC", fconds.Namount())
-		frate := fmt.Sprintf("%.8f JPY/BTC", fconds.FowardRate())
+		fundRate := fmt.Sprintf("%d%%", int(fconds.FundRate()*100))
+		frate := fmt.Sprintf("%.0f JPY/BTC", fconds.FowardRate())
 		// tFormat := "2006-01-02 15:04:05"
 		tFormat := "2006-01-02"
 		settleAt := fconds.SettleAt().Format(tFormat)
-		trow := []string{id, namount, frate, settleAt}
+		trow := []string{id, namount, fundRate, frate, settleAt}
 		table.Append(trow)
 	}
 	table.Render()
@@ -373,30 +374,34 @@ func contractsRoot(args []string, d *Demo) error {
 // command: contracts list
 func listContracts(d *Demo) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Notional Amount", "Foward Rate", "Status"})
+	table.SetHeader([]string{"ID", "Notional Amount", "Fund Amount", "Foward Rate", "Settle Date", "Status"})
 
-	var namount, frate, status string
+	var id, namount, famount, frate, settleAt, status string
 	var trow []string
+	tFormat := "2006-01-02"
 
 	// Dummy record
-	fconds := d.alice.Fconds
-	id := "1"
-	namount = fmt.Sprintf("%.8f BTC", 0.5)
-	frate = fmt.Sprintf("%.8f JPY/BTC", 0.1234)
-	status = "Completed"
-	trow = []string{id, namount, frate, status}
-	table.Append(trow)
+	// id := "1"
+	// namount = fmt.Sprintf("%.8f BTC", 0.5)
+	// frate = fmt.Sprintf("%.8f JPY/BTC", 0.1234)
+	// status = "Completed"
+	// trow = []string{id, namount, frate, status}
+	// table.Append(trow)
 
-	id = "2"
+	id = "1"
+	fconds := d.alice.Fconds
+	dlc := d.alice.Dlc()
 	namount = fmt.Sprintf("%.8f BTC", fconds.Namount())
-	frate = fmt.Sprintf("%.8f JPY/BTC", fconds.FowardRate())
+	famount = fmt.Sprintf("%.8f BTC", float64(dlc.FundAmount())/btcutil.SatoshiPerBitcoin)
+	frate = fmt.Sprintf("%.f JPY/BTC", fconds.FowardRate())
+	settleAt = fconds.SettleAt().Format(tFormat)
 	_, err := d.olivia.Signs(fconds.SettleAt())
 	if err == nil {
 		status = "Fixed"
 	} else {
 		status = "In Progress"
 	}
-	trow = []string{id, namount, frate, status}
+	trow = []string{id, namount, famount, frate, settleAt, status}
 	table.Append(trow)
 
 	table.Render()

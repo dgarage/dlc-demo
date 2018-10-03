@@ -21,9 +21,8 @@ func stepBobPutTfcOfferOnBoard(num int, d *Demo) error {
 	}
 
 	cparty := d.bob
-	fundRate := 0.5
-	// TODO: adjust values
-	forwardRate := 0.98765
+	fundRate := 1.0
+	forwardRate := 1000000.0
 
 	amts := []float64{1, 2}
 

@@ -6,3 +6,7 @@
 # go libraries
 src/github.com/
 src/golang.org/
+
+# autoenv for swtiching GOPATH
+.env
+.env.leave
