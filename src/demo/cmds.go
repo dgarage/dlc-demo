@@ -44,7 +44,7 @@ func listCmds() []*cmd {
 	list = append(list, &cmd{[]string{"offer"}, offerRoot})
 	list = append(list, &cmd{[]string{"contracts"}, contractsRoot})
 	list = append(list, &cmd{[]string{"contract"}, contractRoot})
-	list = append(list, &cmd{[]string{"debug"}, debugRoot})
+	list = append(list, &cmd{[]string{"test"}, testRoot})
 	return list
 }
 func generate(args []string, d *Demo) error {
@@ -269,7 +269,7 @@ func showBalance(d *Demo) error {
 	bSat := d.alice.GetBalance()
 	bBtc := float64(bSat) / btcutil.SatoshiPerBitcoin
 
-	fmt.Printf("Amount: %.8f BTC\n", bBtc)
+	fmt.Printf("Amount: %.6f BTC\n", bBtc)
 	return nil
 }
 
@@ -295,17 +295,20 @@ func listTfcOffers(d *Demo) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Notional Amount", "Fund Rate", "Forward Rate", "Settle Date"})
+	table.SetHeader([]string{"ID", "Notional Amount", "Fund Rate", "Forward Rate", "Settlement Date"})
 	for _, o := range d.mm.Offers() {
 		id := strconv.Itoa(o.ID())
 		fconds := o.Fconds()
-		namount := fmt.Sprintf("%.8f BTC", fconds.Namount())
-		fundRate := fmt.Sprintf("%d%%", int(fconds.FundRate()*100))
-		frate := fmt.Sprintf("%.0f JPY/BTC", fconds.FowardRate())
+		namount := fmt.Sprintf("%.6f BTC", fconds.Namount())
+		fundRate := int(fconds.FundRate() * 100 / 2)
+		fundRateTxt := fmt.Sprintf("%d%% / %d%%", fundRate, fundRate)
+		frateJPYBTC := fconds.FowardRate()
+		frateSatJPY := 1.0 / frateJPYBTC * btcutil.SatoshiPerBitcoin
+		frateTxt := fmt.Sprintf("%.f JPY/BTC, %.1f satoshi/JPY", frateJPYBTC, frateSatJPY)
 		// tFormat := "2006-01-02 15:04:05"
 		tFormat := "2006-01-02"
 		settleAt := fconds.SettleAt().Format(tFormat)
-		trow := []string{id, namount, fundRate, frate, settleAt}
+		trow := []string{id, namount, fundRateTxt, frateTxt, settleAt}
 		table.Append(trow)
 	}
 	table.Render()
@@ -374,34 +377,28 @@ func contractsRoot(args []string, d *Demo) error {
 // command: contracts list
 func listContracts(d *Demo) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Notional Amount", "Fund Amount", "Foward Rate", "Settle Date", "Status"})
-
-	var id, namount, famount, frate, settleAt, status string
-	var trow []string
+	table.SetHeader([]string{"ID", "Notional Amount", "Fund Amount", "Foward Rate", "Settlement Date", "Status"})
 	tFormat := "2006-01-02"
 
-	// Dummy record
-	// id := "1"
-	// namount = fmt.Sprintf("%.8f BTC", 0.5)
-	// frate = fmt.Sprintf("%.8f JPY/BTC", 0.1234)
-	// status = "Completed"
-	// trow = []string{id, namount, frate, status}
-	// table.Append(trow)
-
-	id = "1"
+	id := "1"
 	fconds := d.alice.Fconds
 	dlc := d.alice.Dlc()
-	namount = fmt.Sprintf("%.8f BTC", fconds.Namount())
-	famount = fmt.Sprintf("%.8f BTC", float64(dlc.FundAmount())/btcutil.SatoshiPerBitcoin)
-	frate = fmt.Sprintf("%.f JPY/BTC", fconds.FowardRate())
-	settleAt = fconds.SettleAt().Format(tFormat)
+	namount := fmt.Sprintf("%.6f BTC", fconds.Namount())
+	famount := float64(dlc.FundAmount()) / btcutil.SatoshiPerBitcoin / 2
+	famountTxt := fmt.Sprintf("%.6f BTC / %.6f BTC", famount, famount)
+	frateJPYBTC := fconds.FowardRate()
+	frateSatJPY := 1.0 / frateJPYBTC * btcutil.SatoshiPerBitcoin
+	frateTxt := fmt.Sprintf("%.f JPY/BTC, %.1f satoshi/JPY", frateJPYBTC, frateSatJPY)
+	settleAt := fconds.SettleAt().Format(tFormat)
 	_, err := d.olivia.Signs(fconds.SettleAt())
-	if err == nil {
-		status = "Fixed"
-	} else {
+	var status string
+	if err != nil {
 		status = "In Progress"
+	} else {
+		status = "Ready for Settlement"
 	}
-	trow = []string{id, namount, famount, frate, settleAt, status}
+
+	trow := []string{id, namount, famountTxt, frateTxt, settleAt, status}
 	table.Append(trow)
 
 	table.Render()
@@ -434,13 +431,12 @@ func settleContract(args []string, d *Demo) error {
 	return nil
 }
 
-func debugRoot(args []string, d *Demo) error {
+func testRoot(args []string, d *Demo) error {
 	var err error
 	switch subcmd := args[1]; subcmd {
-	case "genBlock":
-		err = generate([]string{}, d)
+	case "generate":
+		err = generate(args[1:], d)
 	case "fixRate":
-		fmt.Println("Oracle has fixed rate")
 		err = d.olivia.SetVals(args[2], args[3])
 	}
 

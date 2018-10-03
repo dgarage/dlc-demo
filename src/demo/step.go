@@ -22,13 +22,13 @@ func stepBobPutTfcOfferOnBoard(num int, d *Demo) error {
 
 	cparty := d.bob
 	fundRate := 1.0
-	forwardRate := 1000000.0
+	namount := 1.0
 
-	amts := []float64{1, 2}
+	forwardRates := []float64{1000000.0, 900000.0}
 
-	for i, amt := range amts {
+	for i, forwardRate := range forwardRates {
 		ID := i + 1
-		fconds := tfc.NewFowardConditions(amt, fundRate, forwardRate, date)
+		fconds := tfc.NewFowardConditions(namount, fundRate, forwardRate, date)
 		offer := *matchmaker.NewTfcOffer(ID, *cparty, fconds)
 
 		if err = d.mm.PutOffer(offer); err != nil {

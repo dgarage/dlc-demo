@@ -148,6 +148,7 @@ func (oracle *Oracle) SetVals(d string, v string) error {
 		return err
 	}
 	oracle.value[date.Format(OracleTimeLayout)] = vals
+	fmt.Printf("Oracle has fixed spot rate at %s JPY/BTC, %s\n", v, date.Format("2006-01-02"))
 	return nil
 }
 
