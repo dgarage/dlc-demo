@@ -79,6 +79,11 @@ func (u *User) GetAddress() string {
 	return u.wallet.GetAddress()
 }
 
+// Dlc returns the dlc
+func (u *User) Dlc() *dlc.Dlc {
+	return u.dlc
+}
+
 // OfferData is the offer dataset.
 type OfferData struct {
 	High   bool     `json:"high"`   // bet high?

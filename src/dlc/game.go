@@ -30,11 +30,9 @@ func (d *Dlc) Rates() []*Rate {
 	// original calc
 	rates := []*Rate{}
 	amount := d.FundAmount()
-	rates = append(rates, NewRate([][]byte{big.NewInt(10).Bytes()}, 0, amount))
-	rates = append(rates, NewRate([][]byte{big.NewInt(20).Bytes()}, amount/4, (amount/4)*3))
-	rates = append(rates, NewRate([][]byte{big.NewInt(30).Bytes()}, amount/2, amount/2))
-	rates = append(rates, NewRate([][]byte{big.NewInt(40).Bytes()}, (amount/4)*3, amount/4))
-	rates = append(rates, NewRate([][]byte{big.NewInt(50).Bytes()}, amount, 0))
+	rates = append(rates, NewRate([][]byte{big.NewInt(1250000).Bytes()}, (amount/10)*3, (amount/10)*7))
+	rates = append(rates, NewRate([][]byte{big.NewInt(1000000).Bytes()}, amount/2, amount/2))
+	rates = append(rates, NewRate([][]byte{big.NewInt(800000).Bytes()}, (amount/4)*3, amount/4))
 	// set cache
 	d.rates = rates
 	return d.rates

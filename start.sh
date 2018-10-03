@@ -11,17 +11,17 @@ fi
 # change the setting
 B_DIR="$HOME/bitcoin/src"
 
-BD="$B_DIR/bitcoind"
+BD=$(command -v bitcoind)
 
-if [ ! -e $BD ]; then
-    echo "file not found. $BD"
+if [[ ! $BD ]]; then
+    echo "bitcoind not found"
     exit 1
 fi
 
-BC=$B_DIR/bitcoin-cli
+BC=$(command -v bitcoin-cli)
 
-if [ ! -e $BC ]; then
-    echo "file not found. $BC"
+if [[ ! $BC ]]; then
+    echo "bitcoin-cli not found."
     exit 1
 fi
 
@@ -44,7 +44,7 @@ keypool=10
 deamon=1
 listen=1
 EOF
-    echo "setup dlc"
+    # echo "setup dlc"
 fi
 
 PWD=`pwd`
@@ -53,7 +53,7 @@ BCD="$BC -datadir=$PWD/$DATA_DIR/dlc"
 
 $BDD &
 
-echo -n "bitcoind starting"
+# echo -n "bitcoind starting"
 
 LDW=1
 while [ "${LDW}" = "1" ]
@@ -61,17 +61,18 @@ do
     LDW=0
     $BCD getwalletinfo > /dev/null 2>&1 || LDW=1
     if [ "${LDW}" = "1" ]; then
-        echo -n "."
+        # echo -n "."
         sleep 1
     fi
 done
-echo ""
 
-echo "alias dlcdemo=\"$BCD\""
+# echo ""
+
+# echo "alias dlcdemo=\"$BCD\""
 
 cat > $STOP_SH << _EOF_
 #!/bin/bash
-echo "bitcoind stop"
+# echo "bitcoind stop"
 $BCD stop
 
 rm -rf $STOP_SH
